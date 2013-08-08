@@ -38,7 +38,6 @@ class HttpURLConnectionSpec extends Specification {
 		connection.disconnect()
 	}
 
-	@Ignore("until HTTPS support implemented")
 	@Betamax(tape = 'http url connection spec', mode = WRITE_ONLY)
 	void 'proxy intercepts HTTPS requests'() {
 		when:
