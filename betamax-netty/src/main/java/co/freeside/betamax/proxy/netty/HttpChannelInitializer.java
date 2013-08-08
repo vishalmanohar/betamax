@@ -32,11 +32,6 @@ public class HttpChannelInitializer extends ChannelInitializer<SocketChannel> {
     @Override
     public void initChannel(SocketChannel channel) throws Exception {
         ChannelPipeline pipeline = channel.pipeline();
-
-//        SSLEngine engine = SslContextFactory.getServerContext().createSSLEngine();
-//        engine.setUseClientMode(false);
-
-//        pipeline.addLast("ssl", new SslHandler(engine));
         pipeline.addLast("decoder", new HttpRequestDecoder());
         pipeline.addLast("aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH));
         pipeline.addLast("encoder", new HttpResponseEncoder());

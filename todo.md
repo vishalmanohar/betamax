@@ -5,6 +5,7 @@
 ## Code smells
 
 * Is there a way we can write to some kind of response delegator that does appropriate filtering & sends data to multiple delegates? Too much copying shit around going on.
+* Too many params getting passed to classes in Netty module. Can refactor so some is internal
 
 ## Implementation selection
 
