@@ -29,22 +29,21 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import static java.util.logging.Level.SEVERE
 
 @ChannelHandler.Sharable
-public class BetamaxChannelHandler extends ChannelInboundHandlerAdapter {
+public class BetamaxChannelHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
 	private HttpHandler handlerChain
 
 	private static final Logger log = Logger.getLogger(BetamaxChannelHandler.class.name)
 
 	@Override
-	void channelRead(ChannelHandlerContext context, Object message) {
-		FullHttpRequest request = (FullHttpRequest) message
+	protected void channelRead0(ChannelHandlerContext context, FullHttpRequest request) {
 		def betamaxRequest = new NettyRequestAdapter(request)
 		def betamaxResponse = handlerChain.handle(betamaxRequest)
 		sendSuccess(context, betamaxResponse)
 	}
 
 	@Override
-	void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
+	void exceptionCaught(ChannelHandlerContext context, Throwable cause) {
 		if (cause instanceof HandlerException) {
 			log.log SEVERE, "${cause.getClass().simpleName} in proxy processing", cause.message
 			sendError context, new HttpResponseStatus(cause.httpStatus, cause.message), cause.message
