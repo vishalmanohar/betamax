@@ -41,9 +41,10 @@ class ProxyServer implements HttpInterceptor {
 		proxyHandler = new BetamaxChannelHandler()
 		proxyHandler << new DefaultHandlerChain(recorder, newHttpClient())
 
-		def standardInitializer = new TunnelingHttpChannelInitializer(0, proxyHandler); // TODO: correct worker threads? After all nothing in Betamax is actually async so we should probably not tie up the main thread
+		final int sslPort = recorder.proxyPort + 1
+		def standardInitializer = new TunnelingHttpChannelInitializer(0, proxyHandler, new InetSocketAddress("localhost", sslPort)); // TODO: correct worker threads? After all nothing in Betamax is actually async so we should probably not tie up the main thread
 		def secureInitializer = new HttpsChannelInitializer(0, proxyHandler); // TODO: correct worker threads? After all nothing in Betamax is actually async so we should probably not tie up the main thread
-		proxyServer = new NettyBetamaxServer(recorder.proxyPort, recorder.proxyPort + 1, standardInitializer, secureInitializer)
+		proxyServer = new NettyBetamaxServer(recorder.proxyPort, sslPort, standardInitializer, secureInitializer)
 	}
 
 	@Override

@@ -40,7 +40,11 @@ public class NettyRequestAdapter extends AbstractMessage implements Request {
 	@Override
 	public URI getUri() {
 		try {
-			return new URI(delegate.getUri());
+			String uri = delegate.getUri();
+			if (!uri.startsWith("http")) {
+				uri = "https://" + uri;
+			}
+			return new URI(uri);
 		} catch (URISyntaxException e) {
 			throw new IllegalStateException("Invalid URI in underlying request", e);
 		}
