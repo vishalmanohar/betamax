@@ -5,6 +5,8 @@ import io.netty.bootstrap.*;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.*;
 import io.netty.handler.codec.http.*;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
+import static io.netty.handler.codec.http.HttpHeaders.Values.KEEP_ALIVE;
 import static io.netty.handler.codec.http.HttpMethod.*;
 
 public class ProxyConnectHandler extends SimpleChannelInboundHandler<HttpRequest> {
@@ -27,8 +29,8 @@ public class ProxyConnectHandler extends SimpleChannelInboundHandler<HttpRequest
         CallbackNotifier callback = new CallbackNotifier() {
             @Override
             public void onSuccess(final ChannelHandlerContext outboundContext) {
-                HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-                context.channel().writeAndFlush(response)
+                context.channel()
+                        .writeAndFlush(createConnectResponse())
                         .addListener(new ChannelFutureListener() {
                             @Override
                             public void operationComplete(ChannelFuture channelFuture) {
@@ -54,6 +56,13 @@ public class ProxyConnectHandler extends SimpleChannelInboundHandler<HttpRequest
                 .handler(new DirectClientInitializer(callback));
 
         bootstrap.connect(proxyAddress);
+    }
+
+    private HttpResponse createConnectResponse() {
+        DefaultHttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+        response.headers().add(CONNECTION, KEEP_ALIVE);
+        response.headers().add("Proxy-Connection", KEEP_ALIVE);
+        return response;
     }
 
     private boolean isConnectRequest(HttpRequest request) {
