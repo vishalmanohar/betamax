@@ -17,11 +17,13 @@
 package co.freeside.betamax.tape
 
 import co.freeside.betamax.TapeMode
+import co.freeside.betamax.matcher.rules.Matcher
+import co.freeside.betamax.matcher.rules.MethodMatcher
+import co.freeside.betamax.matcher.rules.URIMatcher
 import co.freeside.betamax.message.*
 import co.freeside.betamax.message.tape.*
 import org.yaml.snakeyaml.reader.StreamReader
 import static TapeMode.READ_WRITE
-import static co.freeside.betamax.MatchRule.*
 import static co.freeside.betamax.proxy.jetty.BetamaxProxy.X_BETAMAX
 import static org.apache.http.HttpHeaders.VIA
 
@@ -35,14 +37,14 @@ class MemoryTape implements Tape {
 	String name
 	List<RecordedInteraction> interactions = []
 	private TapeMode mode = READ_WRITE
-	private Comparator<Request>[] matchRules = [method, uri]
+	private Matcher[] matchRules = [new MethodMatcher(), new URIMatcher()]
     private AtomicInteger orderedIndex = new AtomicInteger();
 
 	void setMode(TapeMode mode) {
 		this.mode = mode
 	}
 
-	void setMatchRules(Comparator<Request>[] matchRules) {
+	void setMatchRules(Matcher[] matchRules) {
 		this.matchRules = matchRules
 	}
 

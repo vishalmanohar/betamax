@@ -16,6 +16,9 @@
 
 package co.freeside.betamax
 
+import co.freeside.betamax.matcher.rules.MethodMatcher
+import co.freeside.betamax.matcher.rules.URIMatcher
+
 import java.util.logging.Logger
 import co.freeside.betamax.proxy.jetty.ProxyServer
 import co.freeside.betamax.tape.*
@@ -25,7 +28,6 @@ import org.junit.rules.MethodRule
 import org.junit.runners.model.*
 import org.yaml.snakeyaml.introspector.PropertyUtils
 import static TapeMode.READ_WRITE
-import static co.freeside.betamax.MatchRule.*
 import static java.util.Collections.EMPTY_MAP
 /**
  * This is the main interface to the Betamax proxy. It allows control of Betamax configuration and inserting and
@@ -120,7 +122,7 @@ class Recorder implements MethodRule {
 	void insertTape(String name, Map arguments = [:]) {
 		tape = tapeLoader.loadTape(name)
 		tape.mode = arguments.mode ?: defaultMode
-		tape.matchRules = arguments.match ?: [method, uri]
+		tape.matchRules = arguments.match ?: [new MethodMatcher(), new URIMatcher()]
 		tape
 	}
 
@@ -182,7 +184,9 @@ class Recorder implements MethodRule {
 			log.fine "found @Betamax annotation on '$method.name'"
 			new Statement() {
 				void evaluate() {
-					withTape(annotation.tape(), [mode: annotation.mode(), match: annotation.match()]) {
+                    def matchRules = annotation.match()
+                    def matchers = matchRules.collect {it.matcher}
+                    withTape(annotation.tape(), [mode: annotation.mode(), match: matchers]) {
 						statement.evaluate()
 					}
 				}

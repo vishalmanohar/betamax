@@ -14,31 +14,15 @@
  * limitations under the License.
  */
 
-package co.freeside.betamax
+package co.freeside.betamax.matcher.rules
 
-import co.freeside.betamax.matcher.rules.*
+import co.freeside.betamax.message.Request
 
 /**
  * Implements a request matching rule for finding recordings on a tape.
  */
-enum MatchRule {
-    method(new MethodMatcher()),
-	uri(new URIMatcher()),
-	host(new HostMatcher()),
-	path(new PathMatcher()),
-	port(new PortMatcher()),
-	query(new QueryMatcher()),
-	fragment(new FragmentMatcher()),
-    headers(new HeadersMatcher()),
-	body (new BodyMatcher());
-
-    private  final Matcher matcher;
-
-    MatchRule(Matcher matcher){
-        this.matcher = matcher;
-    }
-
-    Matcher getMatcher(){
-       this.matcher;
+class FragmentMatcher implements Matcher {
+    int compare(Request a, Request b) {
+        a.uri.fragment <=> b.uri.fragment
     }
 }

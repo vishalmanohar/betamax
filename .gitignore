@@ -13,3 +13,4 @@
 /.gradletasknamecache
 /src/docs/_site/
 .DS_Store
+/classes

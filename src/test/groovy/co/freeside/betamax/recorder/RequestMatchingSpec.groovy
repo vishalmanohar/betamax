@@ -2,6 +2,7 @@ package co.freeside.betamax.recorder
 
 import co.freeside.betamax.Recorder
 import co.freeside.betamax.httpclient.BetamaxRoutePlanner
+import co.freeside.betamax.matcher.rules.HostMatcher
 import co.freeside.betamax.util.httpbuilder.BetamaxRESTClient
 import groovyx.net.http.RESTClient
 import spock.lang.*
@@ -85,7 +86,7 @@ interactions:
     body: get method response from xkcd.com
 '''
 		when:
-		def response = recorder.withTape('host match tape', [match: [host]]) {
+		def response = recorder.withTape('host match tape', [match: [new HostMatcher()]]) {
 			http.get(uri: 'http://xkcd.com/875/')
 		}
 
