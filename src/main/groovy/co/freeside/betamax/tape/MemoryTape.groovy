@@ -24,6 +24,9 @@ import static TapeMode.READ_WRITE
 import static co.freeside.betamax.MatchRule.*
 import static co.freeside.betamax.proxy.jetty.BetamaxProxy.X_BETAMAX
 import static org.apache.http.HttpHeaders.VIA
+
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Represents a set of recorded HTTP interactions that can be played back or appended to.
  */
@@ -33,6 +36,7 @@ class MemoryTape implements Tape {
 	List<RecordedInteraction> interactions = []
 	private TapeMode mode = READ_WRITE
 	private Comparator<Request>[] matchRules = [method, uri]
+    private AtomicInteger orderedIndex = new AtomicInteger();
 
 	void setMode(TapeMode mode) {
 		this.mode = mode
@@ -50,13 +54,32 @@ class MemoryTape implements Tape {
 		mode.writable
 	}
 
+	
+	boolean isSequential() {
+        mode.sequential
+    }
+
 	int size() {
 		interactions.size()
 	}
 
 
 	boolean seek(Request request) {
-		findMatch(request) >= 0
+		if (isSequential()) {
+            try {
+                // TODO: it's a complete waste of time using an AtomicInteger when this method is called before play in a non-transactional way
+                Integer index = orderedIndex.get();
+                RecordedInteraction interaction = interactions.get(index);
+                RecordedRequest nextRequest = (interaction == null ? null : interaction.getRequest());
+                RequestMatcher requestMatcher = new RequestMatcher(request, matchRules);
+                return nextRequest != null;
+            } catch (IndexOutOfBoundsException e) {
+                throw new RuntimeException("No more entries in tape to play");
+            }
+        } 
+        else {
+			findMatch(request) >= 0
+		}
 	}
 
 	Response play(Request request) {
@@ -64,13 +87,38 @@ class MemoryTape implements Tape {
 			throw new IllegalStateException('the tape is not readable')
 		}
 
-		int position = findMatch(request)
-		if (position < 0) {
-			throw new IllegalStateException('no matching recording found')
-		} else {
-			interactions[position].response
+
+        if (mode.isSequential()) {
+            RequestMatcher requestMatcher = new RequestMatcher(request, matchRules);
+            Integer nextIndex = orderedIndex.getAndIncrement();
+            final RecordedInteraction nextInteraction = interactions.get(nextIndex);
+            if (nextInteraction == null)
+                throw new IllegalStateException("No recording found at position " + String.valueOf(nextIndex));
+
+//            if (!requestMatcher.matches(nextInteraction.getRequest()))
+//                throw new IllegalStateException("Request " + stringify(request) + " does not match recorded request " + stringify(nextInteraction.getRequest()));
+
+            return nextInteraction.getResponse();
+        } 
+        else {
+			int position = findMatch(request)
+			if (position < 0) {
+				throw new IllegalStateException('no matching recording found')
+			} else {
+				interactions[position].response
+			}
 		}
 	}
+
+	private String stringify(Request request) {
+        try {
+            return "method: "  + request.getMethod()  + ", " +
+                   "uri: "     + request.getUri()     + ", " +
+                   "headers: " + request.getHeaders() + ", ";
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 	synchronized void record(Request request, Response response) {
 		if (!mode.writable) {
@@ -83,11 +131,15 @@ class MemoryTape implements Tape {
 				recorded: new Date()
 		)
 
-		int position = findMatch(request)
-		if (position >= 0) {
-			interactions[position] = interaction
-		} else {
-			interactions << interaction
+        if (mode.isSequential()) {
+            interactions.add(interaction);
+        } else {
+			int position = findMatch(request)
+			if (position >= 0) {
+				interactions[position] = interaction
+			} else {
+				interactions << interaction
+			}
 		}
 	}
 

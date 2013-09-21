@@ -44,6 +44,7 @@ interface Tape {
 	 */
 	boolean isWritable()
 
+	boolean isSequential()
 	/**
 	 * @return the number of recorded HTTP interactions currently stored on the tape.
 	 */
