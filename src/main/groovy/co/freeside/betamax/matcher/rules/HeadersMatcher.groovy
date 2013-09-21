@@ -23,13 +23,12 @@ import co.freeside.betamax.message.Request
  */
 class HeadersMatcher implements Matcher {
 
-    String[] keys = null;
+    List<String> keys = null;
 
     HeadersMatcher(){
-
     }
 
-    HeadersMatcher(String... keys){
+    HeadersMatcher(List<String> keys){
         this.keys = keys;
     }
 

@@ -85,6 +85,22 @@ class RequestMatcherSpec extends Specification {
 		!requestMatcher.matches(request4)
 	}
 
+	void 'can match specific headers'() {
+		given:
+		def request1 = new RecordedRequest(method: 'GET', uri: 'http://freeside.co/betamax'.toURI(), headers: [(ACCEPT_ENCODING): 'gzip, deflate', ("Custom"): 'foo'])
+		def request2 = new RecordedRequest(method: 'GET', uri: 'http://freeside.co/betamax'.toURI(), headers: [(ACCEPT_ENCODING): 'gzip, deflate', ("Custom"): 'bar'])
+		def request3 = new RecordedRequest(method: 'GET', uri: 'http://freeside.co/betamax'.toURI(), headers: [(ACCEPT_ENCODING): 'gzip, deflate'])
+
+		and:
+		def request = new BasicRequest(method: 'GET', uri: 'http://freeside.co/betamax'.toURI(), headers: [(ACCEPT_ENCODING): ['something'], ("Custom"): ['foo']])
+		def requestMatcher = new RequestMatcher(request, new HeadersMatcher(["Custom"]))
+
+		expect:
+		requestMatcher.matches(request1)
+		!requestMatcher.matches(request2)
+		!requestMatcher.matches(request3)
+	}
+
 	void 'can match post body'() {
 		given:
 		def request1 = new RecordedRequest(method: 'POST', uri: 'http://freeside.co/betamax'.toURI(), body: 'q=1')
