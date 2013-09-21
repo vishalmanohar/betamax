@@ -101,6 +101,20 @@ class RequestMatcherSpec extends Specification {
 		!requestMatcher.matches(request3)
 	}
 
+	void 'should match specific headers when request does not have any'() {
+		given:
+		def request1 = new RecordedRequest(method: 'GET', uri: 'http://freeside.co/betamax'.toURI(), headers: [(ACCEPT_ENCODING): 'gzip, deflate'])
+		def request2 = new RecordedRequest(method: 'GET', uri: 'http://freeside.co/betamax'.toURI(), headers: [(ACCEPT_ENCODING): 'gzip, deflate'])
+
+		and:
+		def requestWithoutHeader = new BasicRequest(method: 'GET', uri: 'http://freeside.co/betamax'.toURI(), headers: [(ACCEPT_ENCODING): ['something']])
+		def requestMatcherWithoutHeader = new RequestMatcher(requestWithoutHeader, new HeadersMatcher(["Custom"]))
+
+		expect:
+        requestMatcherWithoutHeader.matches(request1)
+        requestMatcherWithoutHeader.matches(request2)
+	}
+
 	void 'can match post body'() {
 		given:
 		def request1 = new RecordedRequest(method: 'POST', uri: 'http://freeside.co/betamax'.toURI(), body: 'q=1')

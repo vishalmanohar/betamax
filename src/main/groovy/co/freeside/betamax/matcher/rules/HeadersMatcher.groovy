@@ -33,12 +33,12 @@ class HeadersMatcher implements Matcher {
     }
 
     int compare(Request a, Request b) {
-        def result = a.headers.size() <=> b.headers.size()
-        if (result != 0) {
-            return result
-        }
-
         if(keys == null){
+            def result = a.headers.size() <=> b.headers.size()
+            if (result != 0) {
+                return result
+            }
+
             if (a.headers.keySet() != b.headers.keySet()) {
                 return -1 // wouldn't work if we cared about ordering...
             }
@@ -51,7 +51,9 @@ class HeadersMatcher implements Matcher {
             return 0;
         } else {
             int compare = 0
-            keys.each {compare += a.headers[it] <=> b.headers[it] }
+            keys.each {
+                compare += a.headers[it] <=> b.headers[it]
+            }
             return compare
         }
     }
