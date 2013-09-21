@@ -39,6 +39,7 @@ class MemoryTape implements Tape {
 	private TapeMode mode = READ_WRITE
 	private Matcher[] matchRules = [new MethodMatcher(), new URIMatcher()]
     private AtomicInteger orderedIndex = new AtomicInteger();
+    private MatchedInteractions matchedInteractions = new MatchedInteractions();
 
 	void setMode(TapeMode mode) {
 		this.mode = mode
@@ -69,12 +70,12 @@ class MemoryTape implements Tape {
 	boolean seek(Request request) {
 		if (isSequential()) {
             try {
-                // TODO: it's a complete waste of time using an AtomicInteger when this method is called before play in a non-transactional way
-                Integer index = orderedIndex.get();
-                RecordedInteraction interaction = interactions.get(index);
-                RecordedRequest nextRequest = (interaction == null ? null : interaction.getRequest());
-                RequestMatcher requestMatcher = new RequestMatcher(request, matchRules);
-                return nextRequest != null;
+                return true
+//                Integer index = orderedIndex.get();
+//                RecordedInteraction interaction = interactions.get(index);
+//                RecordedRequest nextRequest = (interaction == null ? null : interaction.getRequest());
+//                RequestMatcher requestMatcher = new RequestMatcher(request, matchRules);
+//                return nextRequest != null;
             } catch (IndexOutOfBoundsException e) {
                 throw new RuntimeException("No more entries in tape to play");
             }
@@ -89,17 +90,11 @@ class MemoryTape implements Tape {
 			throw new IllegalStateException('the tape is not readable')
 		}
 
-
         if (mode.isSequential()) {
-            RequestMatcher requestMatcher = new RequestMatcher(request, matchRules);
-            Integer nextIndex = orderedIndex.getAndIncrement();
-            final RecordedInteraction nextInteraction = interactions.get(nextIndex);
+            def index = findSequentialMatch(request)
+            final RecordedInteraction nextInteraction = interactions.get(index);
             if (nextInteraction == null)
                 throw new IllegalStateException("No recording found at position " + String.valueOf(nextIndex));
-
-//            if (!requestMatcher.matches(nextInteraction.getRequest()))
-//                throw new IllegalStateException("Request " + stringify(request) + " does not match recorded request " + stringify(nextInteraction.getRequest()));
-
             return nextInteraction.getResponse();
         } 
         else {
@@ -155,6 +150,27 @@ class MemoryTape implements Tape {
 		interactions.findIndexOf {
 			requestMatcher.matches(it.request)
 		}
+	}
+
+	private synchronized int findSequentialMatch(Request request) {
+		def requestMatcher = new RequestMatcher(request, matchRules)
+        def currentIndex = matchedInteractions.getIndex(request)
+        def startIndex = currentIndex + 1;
+        def index = interactions.findIndexOf (startIndex, {
+            requestMatcher.matches(it.request)
+        })
+
+        if(index == -1 && currentIndex == -1) {
+            throw new RuntimeException("No interactions to play for " + request.getUri().toString())
+        }
+
+        if(index == -1){
+            return currentIndex
+        }
+
+        def recordedRequest = interactions.get(index).request
+        matchedInteractions.setIndex(new RequestMatcher(recordedRequest, matchRules), index)
+        return index
 	}
 
 	private static RecordedRequest recordRequest(Request request) {

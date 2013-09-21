@@ -20,12 +20,11 @@ import co.freeside.betamax.matcher.rules.Matcher
 import co.freeside.betamax.matcher.rules.MethodMatcher
 import co.freeside.betamax.matcher.rules.URIMatcher
 import co.freeside.betamax.message.Request
-import co.freeside.betamax.message.tape.RecordedRequest
 
 class RequestMatcher {
 
-	private final Matcher[] matchers
-	private final Request request
+	final Matcher[] matchers
+	final Request request
 
 	RequestMatcher(Request request) {
 		this(request, [new MethodMatcher(), new URIMatcher()] as Matcher[]) // not sure why varargs doesn't want to work here
@@ -36,7 +35,7 @@ class RequestMatcher {
         this.matchers = matchers
 	}
 
-	boolean matches(RecordedRequest recordedRequest) {
+	boolean matches(Request recordedRequest) {
         matchers.every { it.compare(request, recordedRequest) == 0 }
 	}
 
